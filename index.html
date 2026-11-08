@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -756,20 +755,37 @@
         <p>&copy; 2026 Thika Technical Training Institute (Thika TTI) Peer Counseling Center. All rights reserved. <span onclick="showPage('admin')" style="cursor: pointer; opacity: 0.25; margin-left: 8px;" title="Admin Access"><i class="fa-solid fa-lock"></i></span></p>
         <p style="font-size: 0.8rem; margin-top: 0.4rem; opacity: 0.7;">Empowering students through empathy, active listening, and confidential professional support.</p>
     </footer>
-    <!-- SCRIPT & API ENGINE -->
-    <script>
-        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwAkFRkpS97XHOPQD885DxktUmlLjbgUMTTbSynU9I5m2xFTbNKPeP1uEU7pdsPWxU0/exec";
-        
-        // Published Google Sheet CSV URLs
-        const GALLERY_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRyRS5tz82AMyvvEpCxa7OpUIO4hkYN5p5unVPbHizbDnwlDZTVo5Gv8TGPNv1u52uXnsEBTTfEJUIs/pub?gid=1892018027&single=true&output=csv";
-        const LEADERS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRyRS5tz82AMyvvEpCxa7OpUIO4hkYN5p5unVPbHizbDnwlDZTVo5Gv8TGPNv1u52uXnsEBTTfEJUIs/pub?gid=1891923427&single=true&output=csv";
-        const COUNSELLORS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRyRS5tz82AMyvvEpCxa7OpUIO4hkYN5p5unVPbHizb";
+
+    <!-- FIREBASE SDK ENGINE (MODULE SCRIPT) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
+        import { 
+            getFirestore, collection, addDoc, getDocs, deleteDoc, doc, onSnapshot, serverTimestamp 
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+          apiKey: "AIzaSyAcAJIfwVfJlWgaVmxj-RGWEYy81yymKSg",
+          authDomain: "thika-tti-peer-counseling-club.firebaseapp.com",
+          projectId: "thika-tti-peer-counseling-club",
+          storageBucket: "thika-tti-peer-counseling-club.firebasestorage.app",
+          messagingSenderId: "939164679022",
+          appId: "1:939164679022:web:042ca033dc36b9d184df7f",
+          measurementId: "G-MSNDC3JRMZ"
+        };
+
+        // Initialize Firebase & Firestore Database
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const db = getFirestore(app);
 
         const DB_KEYS = {
             AVAILABILITY: 'thika_counsel_avail_v12',
             PASSWORDS: 'thika_counsel_passwords_v12',
             ADMIN_SESSION: 'thika_counsel_session_v12'
         };
+
         let globalDB = {
             hotlines: [],
             leaders: [],
@@ -777,6 +793,7 @@
             events: [],
             gallery: []
         };
+
         function initLocalFallbacks() {
             if (!localStorage.getItem(DB_KEYS.PASSWORDS)) {
                 localStorage.setItem(DB_KEYS.PASSWORDS, JSON.stringify({
@@ -795,93 +812,49 @@
             }
         }
 
-        // CSV Helper to parse raw CSV data
-        function parseCSV(csvText) {
-            const lines = csvText.split(/\r\n|\n|\r/);
-            if (!lines.length) return [];
-            const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
-            const results = [];
-            for (let i = 1; i < lines.length; i++) {
-                if (!lines[i].trim()) continue;
-                const currentLine = lines[i].split(',').map(item => item.trim().replace(/^"|"$/g, ''));
-                const obj = {};
-                headers.forEach((header, index) => {
-                    obj[header] = currentLine[index] || '';
+        // Live Real-Time Data Sync via Firebase Cloud Firestore
+        function setupFirebaseListeners() {
+            const collections = ['hotlines', 'leaders', 'counsellors', 'events', 'gallery'];
+            collections.forEach(colName => {
+                onSnapshot(collection(db, colName), (snapshot) => {
+                    globalDB[colName] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    refreshAllUI();
+                }, (error) => {
+                    console.error(`Firebase snapshot error on ${colName}:`, error);
                 });
-                results.push(obj);
-            }
-            return results;
+            });
         }
 
-        async function fetchGlobalWebsiteData() {
+        // Add item to Firestore
+        async function addFirestoreRecord(colName, dataObj) {
             try {
-                // Fetch Apps Script Endpoint for Apps Script dynamic data
-                const response = await fetch(APPS_SCRIPT_URL);
-                const data = await response.json();
-                if (data && typeof data === 'object') {
-                    globalDB.hotlines = data.hotlines || [];
-                    globalDB.leaders = data.leaders || [];
-                    globalDB.counsellors = data.counsellors || [];
-                    globalDB.events = data.events || [];
-                    globalDB.gallery = data.gallery || [];
-                }
-            } catch (err) {
-                console.error("Failed to fetch from Google Sheets script", err);
-            }
-
-            // Fetch & parse Published CSV Links
-            try {
-                const [galRes, leadRes, counsRes] = await Promise.allSettled([
-                    fetch(GALLERY_CSV_URL).then(r => r.text()),
-                    fetch(LEADERS_CSV_URL).then(r => r.text()),
-                    fetch(COUNSELLORS_CSV_URL).then(r => r.text())
-                ]);
-
-                if (galRes.status === 'fulfilled' && galRes.value) {
-                    const parsedGal = parseCSV(galRes.value);
-                    if (parsedGal.length) globalDB.gallery = parsedGal.map((g, idx) => ({ id: g.id || 'g_csv_' + idx, url: g.url || g.URL || g.image || '', caption: g.caption || g.Caption || g.title || '' }));
-                }
-
-                if (leadRes.status === 'fulfilled' && leadRes.value) {
-                    const parsedLead = parseCSV(leadRes.value);
-                    if (parsedLead.length) globalDB.leaders = parsedLead.map((l, idx) => ({ id: l.id || 'l_csv_' + idx, name: l.name || l.Name || '', role: l.role || l.Role || l.position || '', photo: l.photo || l.Photo || l.image || '' }));
-                }
-
-                if (counsRes.status === 'fulfilled' && counsRes.value) {
-                    const parsedCouns = parseCSV(counsRes.value);
-                    if (parsedCouns.length) {
-                        globalDB.counsellors = parsedCouns.map((c, idx) => ({
-                            id: c.id || 'c_csv_' + idx,
-                            name: c.name || c.Name || '',
-                            specialty: c.specialty || c.Specialty || c.specialization || '',
-                            phone: c.phone || c.Phone || c.whatsapp || '',
-                            photo: c.photo || c.Photo || c.image || '',
-                            availableHours: c['Available Time'] || c['Available Hours'] || c.availableHours || c.available_time || c.hours || c.Hours || 'Mon - Fri: 8:00 AM - 5:00 PM'
-                        }));
-                    }
-                }
-            } catch (err) {
-                console.error("Failed to parse published CSV URLs", err);
-            }
-
-            refreshAllUI();
-        }
-        async function sendDatabaseAction(table, action, payload) {
-            try {
-                showToast("Syncing with Google Sheet...");
-                await fetch(APPS_SCRIPT_URL, {
-                    method: "POST",
-                    body: JSON.stringify({ table, action, payload })
+                showToast("Saving to Firebase Cloud...");
+                await addDoc(collection(db, colName), {
+                    ...dataObj,
+                    createdAt: serverTimestamp()
                 });
-                await fetchGlobalWebsiteData();
-                showToast("Changes saved successfully!");
+                showToast("Saved to Firebase successfully!");
             } catch (err) {
-                console.error("Sync error:", err);
-                alert("Failed to sync with Google Sheet.");
+                console.error("Firebase Add Error:", err);
+                alert("Failed to save to Firebase Database.");
             }
         }
+
+        // Delete item from Firestore
+        async function deleteFirestoreRecord(colName, docId) {
+            try {
+                showToast("Removing from Firebase...");
+                await deleteDoc(doc(db, colName, docId));
+                showToast("Deleted successfully!");
+            } catch (err) {
+                console.error("Firebase Delete Error:", err);
+                alert("Failed to delete record.");
+            }
+        }
+
         function getDB(key) { return JSON.parse(localStorage.getItem(key)) || []; }
         function saveDB(key, data) { localStorage.setItem(key, JSON.stringify(data)); }
+
         function refreshAllUI() {
             renderHomeHotlines();
             renderHomeEvents();
@@ -901,8 +874,9 @@
                 renderAdminCounsellorsListSub('adminCounsellorsListSub');
             }
         }
-        // Navigation & Auto-Close Mobile Menu on Click
-        function showPage(pageId) {
+
+        // Navigation & Page Switching
+        window.showPage = function(pageId) {
             document.querySelectorAll('.page-view').forEach(el => el.classList.remove('active-page'));
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
             const targetPage = document.getElementById(`page-${pageId}`);
@@ -911,11 +885,12 @@
             if (navItem) navItem.classList.add('active');
             if (pageId === 'booking') renderBookingPage();
             if (pageId === 'admin') checkAdminSession();
-            // Auto-close mobile menu dropdown when any link is clicked
+            
             const navLinks = document.getElementById('navLinks');
             if (navLinks) navLinks.classList.remove('active');
             window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
+        };
+
         // Particle Backdrop
         const particleCanvas = document.getElementById('globalParticleCanvas');
         const pCtx = particleCanvas.getContext('2d');
@@ -960,6 +935,7 @@
             requestAnimationFrame(animateParticles);
         }
         animateParticles();
+
         function renderHomeHotlines() {
             const container = document.getElementById('homeHotlinesContainer');
             if (!container) return;
@@ -978,7 +954,8 @@
                 container.appendChild(bar);
             });
         }
-        function checkMood(mood) {
+
+        window.checkMood = function(mood) {
             const box = document.getElementById('moodResultBox');
             box.style.display = 'block';
             if (mood === 'calm') {
@@ -990,8 +967,10 @@
             } else if (mood === 'lonely') {
                 box.innerHTML = '<strong>You are never alone.</strong> Our peer support community on WhatsApp and our confidential counselors are here for you 24/7.';
             }
-        }
-        function toggleFaq(item) { item.classList.toggle('active'); }
+        };
+
+        window.toggleFaq = function(item) { item.classList.toggle('active'); };
+
         function renderHomeEvents() {
             const container = document.getElementById('homeEventsContainer');
             if (!container) return;
@@ -1011,6 +990,7 @@
                 container.appendChild(card);
             });
         }
+
         function renderLeadersPage() {
             const container = document.getElementById('leadersContainer');
             if (!container) return;
@@ -1027,6 +1007,7 @@
                 container.appendChild(card);
             });
         }
+
         function renderCounsellorsPage() {
             const container = document.getElementById('counsellorsContainer');
             if (!container) return;
@@ -1035,7 +1016,7 @@
                 const card = document.createElement('div');
                 card.className = 'card';
                 card.style.textAlign = 'center';
-                const availHours = c.availableHours || c['Available Time'] || c['Available Hours'] || 'Available on Appointment';
+                const availHours = c.availableHours || 'Available on Appointment';
                 card.innerHTML = `
                     <img src="${c.photo}" alt="${c.name}" class="counsellor-avatar">
                     <h3 style="font-weight: 800; font-size: 1.15rem; text-transform: uppercase;">${c.name}</h3>
@@ -1047,6 +1028,7 @@
                 container.appendChild(card);
             });
         }
+
         function renderBookingPage() {
             const select = document.getElementById('bookingCounsellorSelect');
             if (!select) return;
@@ -1062,9 +1044,12 @@
             }
             renderClientAvailableSlots();
         }
+
         let selectedTimeSlot = null;
-        function renderClientAvailableSlots() {
-            const counsellor = document.getElementById('bookingCounsellorSelect').value;
+        window.renderClientAvailableSlots = function() {
+            const selectEl = document.getElementById('bookingCounsellorSelect');
+            if (!selectEl || !selectEl.value) return;
+            const counsellor = selectEl.value;
             const date = document.getElementById('bookingDateInput').value;
             const slotsContainer = document.getElementById('slotsContainer');
             if (!slotsContainer) return;
@@ -1094,13 +1079,15 @@
                 }
                 slotsContainer.appendChild(btn);
             });
-        }
-        function selectCounsellorAndBook(name) {
+        };
+
+        window.selectCounsellorAndBook = function(name) {
             showPage('booking');
             document.getElementById('bookingCounsellorSelect').value = name;
             renderClientAvailableSlots();
-        }
-        document.getElementById('clientBookingForm').addEventListener('submit', (e) => {
+        };
+
+        document.getElementById('clientBookingForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const counsellorName = document.getElementById('bookingCounsellorSelect').value;
             const date = document.getElementById('bookingDateInput').value;
@@ -1114,19 +1101,34 @@
             }
             availability[slotIndex].isBooked = true;
             saveDB(DB_KEYS.AVAILABILITY, availability);
-            const counsellorObj = globalDB.counsellors.find(c => c.name === counsellorName);
-            const phone = counsellorObj ? counsellorObj.phone : '254700000000';
+
             const clientName = document.getElementById('clientName').value;
             const clientEmail = document.getElementById('clientEmail').value;
             const clientPhone = document.getElementById('clientPhone').value;
             const type = document.getElementById('bookingType').value;
             const format = document.getElementById('bookingFormat').value;
+
+            // Log booking transaction directly to Firebase Firestore
+            await addFirestoreRecord('appointments', {
+                counsellorName,
+                date,
+                selectedTimeSlot,
+                clientName,
+                clientEmail,
+                clientPhone,
+                type,
+                format
+            });
+
+            const counsellorObj = globalDB.counsellors.find(c => c.name === counsellorName);
+            const phone = counsellorObj ? counsellorObj.phone : '254700000000';
             const waMessage = `Hello ${counsellorName}, I would like to book a confidential counseling session.%0A%0A*Student Details:*%0A- Name: ${clientName}%0A- Email: ${clientEmail}%0A- Phone: ${clientPhone}%0A- Specialty: ${type}%0A- Format: ${format}%0A- Date & Slot: ${date} @ ${selectedTimeSlot}`;
             showToast(`Appointment reserved! Redirecting to ${counsellorName}'s WhatsApp...`);
             setTimeout(() => { window.open(`https://wa.me/${phone}?text=${waMessage}`, '_blank'); }, 800);
             e.target.reset();
             renderClientAvailableSlots();
         });
+
         function renderEventsPage() {
             const container = document.getElementById('eventsContainer');
             if (!container) return;
@@ -1142,6 +1144,7 @@
                 container.appendChild(card);
             });
         }
+
         function renderGalleryPage() {
             const container = document.getElementById('galleryContainer');
             if (!container) return;
@@ -1155,16 +1158,18 @@
                 container.appendChild(item);
             });
         }
+
         function openLightbox(url, caption) {
             document.getElementById('lightboxImg').src = url;
             document.getElementById('lightboxCaption').textContent = caption;
             document.getElementById('lightboxModal').classList.add('active');
         }
-        function closeLightbox(e) {
+        window.closeLightbox = function(e) {
             if (e.target.id === 'lightboxModal') { document.getElementById('lightboxModal').classList.remove('active'); }
-        }
-        function closeLightboxDirect() { document.getElementById('lightboxModal').classList.remove('active'); }
-        // --- Admin Authentication & Control ---
+        };
+        window.closeLightboxDirect = function() { document.getElementById('lightboxModal').classList.remove('active'); };
+
+        // --- Admin Authentication & Controls ---
         document.getElementById('adminLoginForm').addEventListener('submit', (e) => {
             e.preventDefault();
             const role = document.getElementById('adminRoleSelect').value;
@@ -1178,6 +1183,7 @@
                 alert('Incorrect password for this role.');
             }
         });
+
         function checkAdminSession() {
             const session = getDB(DB_KEYS.ADMIN_SESSION);
             const loginSection = document.getElementById('adminLoginSection');
@@ -1213,7 +1219,8 @@
                 dashboardSection.style.display = 'none';
             }
         }
-        function showSuperSector(sector) {
+
+        window.showSuperSector = function(sector) {
             document.querySelectorAll('.super-sector-box').forEach(b => b.style.display = 'none');
             const target = document.getElementById(`superSector-${sector}`);
             if (target) target.style.display = 'block';
@@ -1223,24 +1230,26 @@
             if (sector === 'events') renderAdminEventsList();
             if (sector === 'gallery') renderAdminGalleryList();
             if (sector === 'passwords') loadPasswordsToForm();
-        }
-        function logoutAdmin() {
+        };
+
+        window.logoutAdmin = function() {
             localStorage.removeItem(DB_KEYS.ADMIN_SESSION);
             checkAdminSession();
             showToast('Admin logged out.');
-        }
-        // Hotlines
+        };
+
+        // Hotlines Management (Firebase)
         document.getElementById('addHotlineForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const payload = {
-                id: 'h_' + Date.now(),
                 title: document.getElementById('newHotlineTitle').value,
                 phone: document.getElementById('newHotlinePhone').value,
                 desc: document.getElementById('newHotlineDesc').value
             };
-            await sendDatabaseAction('hotlines', 'add', payload);
+            await addFirestoreRecord('hotlines', payload);
             e.target.reset();
         });
+
         function renderAdminHotlinesList() {
             const container = document.getElementById('adminHotlinesList');
             if (!container) return;
@@ -1258,22 +1267,24 @@
                 container.appendChild(item);
             });
         }
-        async function deleteHotline(id) {
+
+        window.deleteHotline = async function(id) {
             if (!confirm('Are you sure you want to delete this emergency hotline?')) return;
-            await sendDatabaseAction('hotlines', 'delete', { id });
-        }
-        // Leaders
+            await deleteFirestoreRecord('hotlines', id);
+        };
+
+        // Leaders Management (Firebase)
         document.getElementById('addLeaderSuperForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const payload = {
-                id: 'l_' + Date.now(),
                 name: document.getElementById('superLeaderName').value,
                 role: document.getElementById('superLeaderRole').value,
                 photo: document.getElementById('superLeaderPhoto').value
             };
-            await sendDatabaseAction('leaders', 'add', payload);
+            await addFirestoreRecord('leaders', payload);
             e.target.reset();
         });
+
         function renderAdminLeadersList() {
             const container = document.getElementById('adminLeadersList');
             if (!container) return;
@@ -1294,51 +1305,57 @@
                 container.appendChild(item);
             });
         }
-        async function deleteLeader(lId, lName) {
+
+        window.deleteLeader = async function(lId, lName) {
             if (!confirm(`Are you sure you want to remove leader ${lName}?`)) return;
-            await sendDatabaseAction('leaders', 'delete', { id: lId });
+            await deleteFirestoreRecord('leaders', lId);
+        };
+
+        // Counsellors Management (Firebase)
+        async function handleAddCounsellor(name, specialty, availableHours, phone, photo) {
+            await addFirestoreRecord('counsellors', { name, specialty, availableHours, phone, photo });
         }
-        // Counsellors
+
         document.getElementById('addCounsellorSuperForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const payload = {
-                id: 'c_' + Date.now(),
-                name: document.getElementById('superCounsellorName').value,
-                specialty: document.getElementById('superCounsellorSpecialty').value,
-                availableHours: document.getElementById('superCounsellorHours').value,
-                phone: document.getElementById('superCounsellorPhone').value,
-                photo: document.getElementById('superCounsellorPhoto').value
-            };
-            await sendDatabaseAction('counsellors', 'add', payload);
+            await handleAddCounsellor(
+                document.getElementById('superCounsellorName').value,
+                document.getElementById('superCounsellorSpecialty').value,
+                document.getElementById('superCounsellorHours').value,
+                document.getElementById('superCounsellorPhone').value,
+                document.getElementById('superCounsellorPhoto').value
+            );
             e.target.reset();
         });
+
         document.getElementById('addCounsellorForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const payload = {
-                id: 'c_' + Date.now(),
-                name: document.getElementById('newCounsellorName').value,
-                specialty: document.getElementById('newCounsellorSpecialty').value,
-                availableHours: document.getElementById('newCounsellorHours').value,
-                phone: document.getElementById('newCounsellorPhone').value,
-                photo: document.getElementById('newCounsellorPhoto').value
-            };
-            await sendDatabaseAction('counsellors', 'add', payload);
+            await handleAddCounsellor(
+                document.getElementById('newCounsellorName').value,
+                document.getElementById('newCounsellorSpecialty').value,
+                document.getElementById('newCounsellorHours').value,
+                document.getElementById('newCounsellorPhone').value,
+                document.getElementById('newCounsellorPhoto').value
+            );
             e.target.reset();
         });
+
         function renderAdminCounsellorsList() {
             const container = document.getElementById('adminCounsellorsList');
             if (container) renderCounsellorsListGeneric(container);
         }
+
         function renderAdminCounsellorsListSub(containerId) {
             const container = document.getElementById(containerId);
             if (container) renderCounsellorsListGeneric(container);
         }
+
         function renderCounsellorsListGeneric(container) {
             container.innerHTML = '';
             globalDB.counsellors.forEach(c => {
                 const item = document.createElement('div');
                 item.style.cssText = 'display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 0.65rem 0.95rem; border-radius: 8px; border: 1px solid var(--border); gap: 1rem; flex-wrap: wrap;';
-                const hours = c.availableHours || c['Available Time'] || c['Available Hours'] || 'N/A';
+                const hours = c.availableHours || 'N/A';
                 item.innerHTML = `
                     <div style="display: flex; align-items: center; gap: 0.85rem;">
                         <img src="${c.photo}" alt="" style="width: 40px; height: 40px; object-fit: cover; border-radius: 50%;">
@@ -1352,41 +1369,47 @@
                 container.appendChild(item);
             });
         }
-        async function deleteCounsellor(cId, cName) {
+
+        window.deleteCounsellor = async function(cId, cName) {
             if (!confirm(`Are you sure you want to remove counsellor ${cName}?`)) return;
-            await sendDatabaseAction('counsellors', 'delete', { id: cId });
+            await deleteFirestoreRecord('counsellors', cId);
+        };
+
+        // Events Management (Firebase)
+        async function handleAddEvent(title, date, desc) {
+            await addFirestoreRecord('events', { title, date, desc });
         }
-        // Events
+
         document.getElementById('addEventSuperForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const payload = {
-                id: 'e_' + Date.now(),
-                title: document.getElementById('superEventTitle').value,
-                date: document.getElementById('superEventDate').value,
-                desc: document.getElementById('superEventDesc').value
-            };
-            await sendDatabaseAction('events', 'add', payload);
+            await handleAddEvent(
+                document.getElementById('superEventTitle').value,
+                document.getElementById('superEventDate').value,
+                document.getElementById('superEventDesc').value
+            );
             e.target.reset();
         });
+
         document.getElementById('addEventForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const payload = {
-                id: 'e_' + Date.now(),
-                title: document.getElementById('newEventTitle').value,
-                date: document.getElementById('newEventDate').value,
-                desc: document.getElementById('newEventDesc').value
-            };
-            await sendDatabaseAction('events', 'add', payload);
+            await handleAddEvent(
+                document.getElementById('newEventTitle').value,
+                document.getElementById('newEventDate').value,
+                document.getElementById('newEventDesc').value
+            );
             e.target.reset();
         });
+
         function renderAdminEventsList() {
             const container = document.getElementById('adminEventsList');
             if (container) renderEventsListGeneric(container);
         }
+
         function renderAdminEventsListSub(containerId) {
             const container = document.getElementById(containerId);
             if (container) renderEventsListGeneric(container);
         }
+
         function renderEventsListGeneric(container) {
             container.innerHTML = '';
             globalDB.events.forEach(ev => {
@@ -1402,39 +1425,45 @@
                 container.appendChild(item);
             });
         }
-        async function deleteEvent(eventId) {
+
+        window.deleteEvent = async function(eventId) {
             if (!confirm('Delete this event?')) return;
-            await sendDatabaseAction('events', 'delete', { id: eventId });
+            await deleteFirestoreRecord('events', eventId);
+        };
+
+        // Gallery Management (Firebase)
+        async function handleAddGallery(url, caption) {
+            await addFirestoreRecord('gallery', { url, caption });
         }
-        // Gallery
+
         document.getElementById('addGallerySuperForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const payload = {
-                id: 'g_' + Date.now(),
-                url: document.getElementById('superGalleryUrl').value,
-                caption: document.getElementById('superGalleryCaption').value
-            };
-            await sendDatabaseAction('gallery', 'add', payload);
+            await handleAddGallery(
+                document.getElementById('superGalleryUrl').value,
+                document.getElementById('superGalleryCaption').value
+            );
             e.target.reset();
         });
+
         document.getElementById('addGalleryForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const payload = {
-                id: 'g_' + Date.now(),
-                url: document.getElementById('rawGalleryUrlInput').value,
-                caption: document.getElementById('newPhotoCaption').value
-            };
-            await sendDatabaseAction('gallery', 'add', payload);
+            await handleAddGallery(
+                document.getElementById('rawGalleryUrlInput').value,
+                document.getElementById('newPhotoCaption').value
+            );
             e.target.reset();
         });
+
         function renderAdminGalleryList() {
             const container = document.getElementById('adminGalleryList');
             if (container) renderGalleryListGeneric(container);
         }
+
         function renderAdminGalleryListSub(containerId) {
             const container = document.getElementById(containerId);
             if (container) renderGalleryListGeneric(container);
         }
+
         function renderGalleryListGeneric(container) {
             container.innerHTML = '';
             globalDB.gallery.forEach(g => {
@@ -1450,10 +1479,12 @@
                 container.appendChild(item);
             });
         }
-        async function deleteGalleryPhoto(id) {
+
+        window.deleteGalleryPhoto = async function(id) {
             if (!confirm('Delete photo?')) return;
-            await sendDatabaseAction('gallery', 'delete', { id });
-        }
+            await deleteFirestoreRecord('gallery', id);
+        };
+
         // Passwords Management
         function loadPasswordsToForm() {
             const passwords = getDB(DB_KEYS.PASSWORDS);
@@ -1462,6 +1493,7 @@
             document.getElementById('passGallery').value = passwords.gallery || '';
             document.getElementById('passCounsellors').value = passwords.counsellors || '';
         }
+
         document.getElementById('changeAllPasswordsForm').addEventListener('submit', (e) => {
             e.preventDefault();
             const passwords = {
@@ -1473,7 +1505,8 @@
             saveDB(DB_KEYS.PASSWORDS, passwords);
             showToast('All role passwords updated successfully!');
         });
-        function changeSinglePassword(e, roleKey) {
+
+        window.changeSinglePassword = function(e, roleKey) {
             e.preventDefault();
             const newPass = document.getElementById(`singlePass_${roleKey}`).value;
             const passwords = getDB(DB_KEYS.PASSWORDS);
@@ -1481,19 +1514,22 @@
             saveDB(DB_KEYS.PASSWORDS, passwords);
             showToast(`${roleKey.toUpperCase()} manager password updated successfully!`);
             document.getElementById(`singlePass_${roleKey}`).value = '';
-        }
+        };
+
         function showToast(msg) {
             const toast = document.getElementById('toastBox');
             document.getElementById('toastMessage').textContent = msg;
             toast.classList.add('show');
             setTimeout(() => toast.classList.remove('show'), 3800);
         }
+
         const hamburger = document.getElementById('hamburger');
         const navLinks = document.getElementById('navLinks');
         hamburger.addEventListener('click', () => navLinks.classList.toggle('active'));
-        // Initialize App & Fetch Live Data from Google Sheet
+
+        // Boot App & Activate Firebase Real-Time Synchronization
         initLocalFallbacks();
-        fetchGlobalWebsiteData();
+        setupFirebaseListeners();
     </script>
 </body>
 </html>
