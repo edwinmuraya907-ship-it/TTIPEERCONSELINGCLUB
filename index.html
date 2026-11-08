@@ -286,15 +286,6 @@
         .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
             outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.15);
         }
-        .slot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 0.6rem; margin-top: 0.4rem; }
-        .slot-btn {
-            padding: 0.6rem; border: 1.5px solid var(--border); border-radius: var(--radius-sm);
-            background: var(--surface); font-weight: 700; font-size: 0.8rem; cursor: pointer; text-align: center;
-            transition: var(--transition); color: var(--text-main);
-        }
-        .slot-btn:hover { border-color: var(--primary); background: var(--primary-light); }
-        .slot-btn.selected { background: var(--primary); color: white; border-color: var(--primary); }
-        .slot-btn.booked { background: #f1f5f9; color: #94a3b8; border-color: #e2e8f0; cursor: not-allowed; text-decoration: line-through; }
         .toast {
             position: fixed; bottom: 2rem; right: 2rem; background: #10b981;
             color: white; padding: 0.9rem 1.4rem; border-radius: var(--radius-md); font-weight: 700;
@@ -481,32 +472,28 @@
     <!-- 4. BOOK A SESSION PAGE -->
     <div id="page-booking" class="page-view">
         <h2 style="font-size: 2rem; font-weight: 800; margin-bottom: 0.4rem; text-transform: uppercase;"><i class="fa-regular fa-calendar-check" style="color: var(--primary);"></i> Book an Appointment</h2>
-        <p style="color: var(--text-muted); margin-bottom: 2rem;">Real-time synchronized availability calendar. Select an open slot to reserve your session.</p>
+        <p style="color: var(--text-muted); margin-bottom: 2rem;">Select your preferred counselor, date, and session details to reserve your confidential meeting.</p>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.75rem;">
             <div class="card">
-                <h3 style="font-size: 1.1rem; font-weight: 800; margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.6rem; text-transform: uppercase;">Step 1: Choose Counsellor & Date</h3>
+                <h3 style="font-size: 1.1rem; font-weight: 800; margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.6rem; text-transform: uppercase;">Step 1: Choose Counsellor & Schedule</h3>
                 
                 <div class="form-group">
                     <label>Select Counsellor</label>
-                    <select id="bookingCounsellorSelect" onchange="renderClientAvailableSlots()"></select>
+                    <select id="bookingCounsellorSelect"></select>
                 </div>
                 <div class="form-group">
-                    <label>Select Date</label>
-                    <input type="date" id="bookingDateInput" onchange="renderClientAvailableSlots()">
+                    <label>Preferred Date</label>
+                    <input type="date" id="bookingDateInput">
                 </div>
                 <div class="form-group">
-                    <label>Available Time Slots (Real-Time)</label>
-                    <div id="slotsContainer" class="slot-grid"></div>
+                    <label>Preferred Time (e.g. 10:00 AM)</label>
+                    <input type="text" id="bookingTimeInput" placeholder="e.g. 10:00 AM" required>
                 </div>
             </div>
             <div class="card">
                 <h3 style="font-size: 1.1rem; font-weight: 800; margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.6rem; text-transform: uppercase;">Step 2: Client & Session Details</h3>
                 
                 <form id="clientBookingForm">
-                    <div class="form-group">
-                        <label>Selected Time Slot</label>
-                        <input type="text" id="selectedSlotDisplay" readonly placeholder="Click a slot on the left" style="font-weight: 700; color: var(--primary);" required>
-                    </div>
                     <div class="form-group">
                         <label>Counselling Specialty Required</label>
                         <select id="bookingType" required>
@@ -553,7 +540,7 @@
                 <h2 style="font-size: 2rem; font-weight: 800; text-transform: uppercase;"><i class="fa-solid fa-images" style="color: var(--primary);"></i> Club Gallery & Photo Highlights</h2>
                 <p style="color: var(--text-muted);">Snapshots from our recent support sessions, retreats, and wellness campaigns. Click any photo to view in fullscreen.</p>
             </div>
-            <span style="font-size: 0.8rem; background: var(--primary-light); color: var(--primary); padding: 0.35rem 0.85rem; border-radius: 20px; font-weight: 700;">Unlimited High-Res Storage</span>
+            <span style="font-size: 0.8rem; background: var(--primary-light); color: var(--primary); padding: 0.35rem 0.85rem; border-radius: 20px; font-weight: 700;">ImgBB Cloud Storage</span>
         </div>
         <div id="galleryContainer" class="gallery-grid"></div>
     </div>
@@ -636,8 +623,8 @@
                     <form id="addLeaderSuperForm" style="margin-bottom: 1.25rem;">
                         <div class="form-group"><label>Full Name</label><input type="text" id="superLeaderName" placeholder="e.g. Sarah Kim" required></div>
                         <div class="form-group"><label>Position / Role</label><input type="text" id="superLeaderRole" placeholder="e.g. Club President" required></div>
-                        <div class="form-group"><label>Portrait Photo URL</label><input type="url" id="superLeaderPhoto" placeholder="https://image-url.com/photo.jpg" required></div>
-                        <button type="submit" class="btn btn-sm" style="width: 100%; justify-content: center;">Add Club Leader</button>
+                        <div class="form-group"><label>Upload Leader Portrait</label><input type="file" id="superLeaderFile" accept="image/*" required></div>
+                        <button type="submit" class="btn btn-sm" style="width: 100%; justify-content: center;">Upload & Add Club Leader</button>
                     </form>
                     <div id="adminLeadersList" style="display: grid; gap: 0.6rem;"></div>
                 </div>
@@ -649,8 +636,8 @@
                         <div class="form-group"><label>Specialty</label><input type="text" id="superCounsellorSpecialty" placeholder="e.g. Trauma & Stress Specialist" required></div>
                         <div class="form-group"><label>Available Hours</label><input type="text" id="superCounsellorHours" placeholder="e.g. Mon - Fri: 8:00 AM - 4:00 PM" required></div>
                         <div class="form-group"><label>WhatsApp Phone</label><input type="tel" id="superCounsellorPhone" placeholder="e.g. 254700000000" required></div>
-                        <div class="form-group"><label>Portrait Photo URL</label><input type="url" id="superCounsellorPhoto" placeholder="https://image-url.com/counsellor.jpg" required></div>
-                        <button type="submit" class="btn btn-secondary btn-sm" style="width: 100%; justify-content: center;">Add Counsellor</button>
+                        <div class="form-group"><label>Upload Counsellor Photo</label><input type="file" id="superCounsellorFile" accept="image/*" required></div>
+                        <button type="submit" class="btn btn-secondary btn-sm" style="width: 100%; justify-content: center;">Upload & Add Counsellor</button>
                     </form>
                     <div id="adminCounsellorsList" style="display: grid; gap: 0.6rem;"></div>
                 </div>
@@ -667,11 +654,11 @@
                 </div>
                 <!-- 5. GALLERY CONTROL -->
                 <div id="superSector-gallery" class="super-sector-box" style="margin-top: 1.25rem; border-top: 1px solid var(--border); padding-top: 1.25rem; display: none;">
-                    <h4 style="font-size: 1.05rem; font-weight: 800; margin-bottom: 0.85rem; text-transform: uppercase; color: #10b981;"><i class="fa-solid fa-image"></i> Manage Gallery Photos</h4>
+                    <h4 style="font-size: 1.05rem; font-weight: 800; margin-bottom: 0.85rem; text-transform: uppercase; color: #10b981;"><i class="fa-solid fa-image"></i> Manage Gallery Photos (ImgBB Upload)</h4>
                     <form id="addGallerySuperForm" style="margin-bottom: 1.25rem;">
-                        <div class="form-group"><label>Image URL</label><input type="url" id="superGalleryUrl" placeholder="https://image-url.com/photo.jpg" required></div>
+                        <div class="form-group"><label>Select Image File</label><input type="file" id="superGalleryFile" accept="image/*" required></div>
                         <div class="form-group"><label>Caption</label><input type="text" id="superGalleryCaption" placeholder="Photo caption..." required></div>
-                        <button type="submit" class="btn btn-sm" style="background: #10b981; width: 100%; justify-content: center;">Upload Photo</button>
+                        <button type="submit" class="btn btn-sm" style="background: #10b981; width: 100%; justify-content: center;">Upload to ImgBB</button>
                     </form>
                     <div id="adminGalleryList" style="display: grid; gap: 0.6rem;"></div>
                 </div>
@@ -710,9 +697,9 @@
             <div id="panel-gallery" class="admin-panel card" style="display: none; margin-bottom: 2rem;">
                 <h3 style="font-size: 1.15rem; font-weight: 800; margin-bottom: 0.85rem; color: var(--secondary); text-transform: uppercase;"><i class="fa-solid fa-image"></i> Gallery Manager Portal</h3>
                 <form id="addGalleryForm" style="margin-bottom: 1.5rem;">
-                    <div class="form-group"><label>Image URL</label><input type="url" id="rawGalleryUrlInput" placeholder="https://image-url.com/photo.jpg" required></div>
+                    <div class="form-group"><label>Select Image File</label><input type="file" id="rawGalleryFileInput" accept="image/*" required></div>
                     <div class="form-group"><label>Photo Caption</label><input type="text" id="newPhotoCaption" placeholder="Caption..." required></div>
-                    <button type="submit" class="btn btn-secondary" style="width: 100%; justify-content: center;">Upload Photo</button>
+                    <button type="submit" class="btn btn-secondary" style="width: 100%; justify-content: center;">Upload to ImgBB</button>
                 </form>
                 <div id="adminGalleryListSub" style="display: grid; gap: 0.75rem; margin-bottom: 1.5rem;"></div>
                 <!-- Individual Password Change -->
@@ -732,8 +719,8 @@
                     <div class="form-group"><label>Specialty</label><input type="text" id="newCounsellorSpecialty" placeholder="e.g. Trauma Specialist" required></div>
                     <div class="form-group"><label>Available Hours</label><input type="text" id="newCounsellorHours" placeholder="e.g. Mon - Fri: 8:00 AM - 4:00 PM" required></div>
                     <div class="form-group"><label>WhatsApp Phone</label><input type="tel" id="newCounsellorPhone" placeholder="254700000000" required></div>
-                    <div class="form-group"><label>Portrait Photo URL</label><input type="url" id="newCounsellorPhoto" placeholder="https://image-url.com/counsellor.jpg" required></div>
-                    <button type="submit" class="btn btn-secondary" style="width: 100%; justify-content: center;">Add Counsellor</button>
+                    <div class="form-group"><label>Upload Photo</label><input type="file" id="newCounsellorFile" accept="image/*" required></div>
+                    <button type="submit" class="btn btn-secondary" style="width: 100%; justify-content: center;">Upload & Add Counsellor</button>
                 </form>
                 <div id="adminCounsellorsListSub" style="display: grid; gap: 0.75rem; margin-bottom: 1.5rem;"></div>
                 <!-- Individual Password Change -->
@@ -756,7 +743,7 @@
         <p style="font-size: 0.8rem; margin-top: 0.4rem; opacity: 0.7;">Empowering students through empathy, active listening, and confidential professional support.</p>
     </footer>
 
-    <!-- FIREBASE SDK ENGINE (MODULE SCRIPT) -->
+    <!-- FIREBASE SDK ENGINE & IMGBB API -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
@@ -775,13 +762,13 @@
           measurementId: "G-MSNDC3JRMZ"
         };
 
-        // Initialize Firebase & Firestore Database
+        const IMGBB_API_KEY = "aba46f249b2295bf550b49e8fc85ee3b";
+
         const app = initializeApp(firebaseConfig);
         const analytics = getAnalytics(app);
         const db = getFirestore(app);
 
         const DB_KEYS = {
-            AVAILABILITY: 'thika_counsel_avail_v12',
             PASSWORDS: 'thika_counsel_passwords_v12',
             ADMIN_SESSION: 'thika_counsel_session_v12'
         };
@@ -803,16 +790,36 @@
                     counsellors: 'counsel123'
                 }));
             }
-            if (!localStorage.getItem(DB_KEYS.AVAILABILITY)) {
-                localStorage.setItem(DB_KEYS.AVAILABILITY, JSON.stringify([
-                    { id: 'av_1', counsellor: 'Jordan Davis', date: '2026-11-05', timeSlot: '09:00 AM - 10:00 AM', isBooked: false },
-                    { id: 'av_2', counsellor: 'Jordan Davis', date: '2026-11-05', timeSlot: '10:00 AM - 11:00 AM', isBooked: false },
-                    { id: 'av_3', counsellor: 'Aisha Morales', date: '2026-11-05', timeSlot: '01:00 PM - 02:00 PM', isBooked: false }
-                ]));
+        }
+
+        // ImgBB Upload Helper Function
+        async function uploadToImgBB(fileInput) {
+            if (!fileInput || !fileInput.files || !fileInput.files[0]) return null;
+            const file = fileInput.files[0];
+            const formData = new FormData();
+            formData.append("image", file);
+
+            showToast("Uploading image to ImgBB cloud...");
+            try {
+                const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+                    method: "POST",
+                    body: formData
+                });
+                const data = await response.json();
+                if (data && data.success) {
+                    showToast("Image uploaded successfully!");
+                    return data.data.url;
+                } else {
+                    alert("ImgBB upload failed.");
+                    return null;
+                }
+            } catch (err) {
+                console.error("ImgBB Error:", err);
+                alert("Failed to upload image.");
+                return null;
             }
         }
 
-        // Live Real-Time Data Sync via Firebase Cloud Firestore
         function setupFirebaseListeners() {
             const collections = ['hotlines', 'leaders', 'counsellors', 'events', 'gallery'];
             collections.forEach(colName => {
@@ -825,7 +832,6 @@
             });
         }
 
-        // Add item to Firestore
         async function addFirestoreRecord(colName, dataObj) {
             try {
                 showToast("Saving to Firebase Cloud...");
@@ -840,7 +846,6 @@
             }
         }
 
-        // Delete item from Firestore
         async function deleteFirestoreRecord(colName, docId) {
             try {
                 showToast("Removing from Firebase...");
@@ -858,6 +863,7 @@
         function refreshAllUI() {
             renderHomeHotlines();
             renderHomeEvents();
+            renderEventsPage();
             renderLeadersPage();
             renderGalleryPage();
             renderCounsellorsPage();
@@ -875,7 +881,6 @@
             }
         }
 
-        // Navigation & Page Switching
         window.showPage = function(pageId) {
             document.querySelectorAll('.page-view').forEach(el => el.classList.remove('active-page'));
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
@@ -884,6 +889,7 @@
             const navItem = document.getElementById(`nav-${pageId}`);
             if (navItem) navItem.classList.add('active');
             if (pageId === 'booking') renderBookingPage();
+            if (pageId === 'events') renderEventsPage();
             if (pageId === 'admin') checkAdminSession();
             
             const navLinks = document.getElementById('navLinks');
@@ -991,6 +997,26 @@
             });
         }
 
+        function renderEventsPage() {
+            const container = document.getElementById('eventsContainer');
+            if (!container) return;
+            container.innerHTML = '';
+            if (globalDB.events.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-muted);">No upcoming events scheduled right now.</p>';
+                return;
+            }
+            globalDB.events.forEach(ev => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <span style="background: var(--primary-light); color: var(--primary); padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.72rem; font-weight: 700; display: inline-block; margin-bottom: 0.6rem;">${ev.date}</span>
+                    <h3 style="font-weight: 800; font-size: 1.1rem; margin-bottom: 0.4rem; text-transform: uppercase;">${ev.title}</h3>
+                    <p style="font-size: 0.88rem; color: var(--text-muted);">${ev.desc}</p>
+                `;
+                container.appendChild(card);
+            });
+        }
+
         function renderLeadersPage() {
             const container = document.getElementById('leadersContainer');
             if (!container) return;
@@ -1040,67 +1066,24 @@
                 select.appendChild(opt);
             });
             if (!document.getElementById('bookingDateInput').value) {
-                document.getElementById('bookingDateInput').value = '2026-11-05';
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('bookingDateInput').value = today;
             }
-            renderClientAvailableSlots();
+            if (!document.getElementById('bookingTimeInput').value) {
+                document.getElementById('bookingTimeInput').value = '10:00 AM';
+            }
         }
-
-        let selectedTimeSlot = null;
-        window.renderClientAvailableSlots = function() {
-            const selectEl = document.getElementById('bookingCounsellorSelect');
-            if (!selectEl || !selectEl.value) return;
-            const counsellor = selectEl.value;
-            const date = document.getElementById('bookingDateInput').value;
-            const slotsContainer = document.getElementById('slotsContainer');
-            if (!slotsContainer) return;
-            slotsContainer.innerHTML = '';
-            selectedTimeSlot = null;
-            document.getElementById('selectedSlotDisplay').value = '';
-            const availability = getDB(DB_KEYS.AVAILABILITY);
-            const slots = availability.filter(a => a.counsellor === counsellor && a.date === date);
-            if (slots.length === 0) {
-                slotsContainer.innerHTML = '<p style="color: var(--text-muted); font-size: 0.85rem;">No available slots for this date.</p>';
-                return;
-            }
-            slots.forEach(slot => {
-                const btn = document.createElement('button');
-                btn.type = 'button';
-                btn.className = `slot-btn ${slot.isBooked ? 'booked' : ''}`;
-                btn.textContent = slot.timeSlot;
-                if (slot.isBooked) {
-                    btn.disabled = true;
-                } else {
-                    btn.onclick = () => {
-                        document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('selected'));
-                        btn.classList.add('selected');
-                        selectedTimeSlot = slot.timeSlot;
-                        document.getElementById('selectedSlotDisplay').value = `${slot.timeSlot} (${slot.date})`;
-                    };
-                }
-                slotsContainer.appendChild(btn);
-            });
-        };
 
         window.selectCounsellorAndBook = function(name) {
             showPage('booking');
             document.getElementById('bookingCounsellorSelect').value = name;
-            renderClientAvailableSlots();
         };
 
         document.getElementById('clientBookingForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const counsellorName = document.getElementById('bookingCounsellorSelect').value;
             const date = document.getElementById('bookingDateInput').value;
-            if (!selectedTimeSlot) { alert('Please select a time slot.'); return; }
-            const availability = getDB(DB_KEYS.AVAILABILITY);
-            const slotIndex = availability.findIndex(a => a.counsellor === counsellorName && a.date === date && a.timeSlot === selectedTimeSlot);
-            if (slotIndex === -1 || availability[slotIndex].isBooked) {
-                alert('Slot already booked! Please select another.');
-                renderClientAvailableSlots();
-                return;
-            }
-            availability[slotIndex].isBooked = true;
-            saveDB(DB_KEYS.AVAILABILITY, availability);
+            const timeSlot = document.getElementById('bookingTimeInput').value;
 
             const clientName = document.getElementById('clientName').value;
             const clientEmail = document.getElementById('clientEmail').value;
@@ -1108,11 +1091,10 @@
             const type = document.getElementById('bookingType').value;
             const format = document.getElementById('bookingFormat').value;
 
-            // Log booking transaction directly to Firebase Firestore
             await addFirestoreRecord('appointments', {
                 counsellorName,
                 date,
-                selectedTimeSlot,
+                timeSlot,
                 clientName,
                 clientEmail,
                 clientPhone,
@@ -1122,28 +1104,11 @@
 
             const counsellorObj = globalDB.counsellors.find(c => c.name === counsellorName);
             const phone = counsellorObj ? counsellorObj.phone : '254700000000';
-            const waMessage = `Hello ${counsellorName}, I would like to book a confidential counseling session.%0A%0A*Student Details:*%0A- Name: ${clientName}%0A- Email: ${clientEmail}%0A- Phone: ${clientPhone}%0A- Specialty: ${type}%0A- Format: ${format}%0A- Date & Slot: ${date} @ ${selectedTimeSlot}`;
+            const waMessage = `Hello ${counsellorName}, I would like to book a confidential counseling session.%0A%0A*Student Details:*%0A- Name: ${clientName}%0A- Email: ${clientEmail}%0A- Phone: ${clientPhone}%0A- Specialty: ${type}%0A- Format: ${format}%0A- Date & Time: ${date} @ ${timeSlot}`;
             showToast(`Appointment reserved! Redirecting to ${counsellorName}'s WhatsApp...`);
             setTimeout(() => { window.open(`https://wa.me/${phone}?text=${waMessage}`, '_blank'); }, 800);
             e.target.reset();
-            renderClientAvailableSlots();
         });
-
-        function renderEventsPage() {
-            const container = document.getElementById('eventsContainer');
-            if (!container) return;
-            container.innerHTML = '';
-            globalDB.events.forEach(ev => {
-                const card = document.createElement('div');
-                card.className = 'card';
-                card.innerHTML = `
-                    <span style="background: var(--primary-light); color: var(--primary); padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.72rem; font-weight: 700; display: inline-block; margin-bottom: 0.6rem;">${ev.date}</span>
-                    <h3 style="font-weight: 800; font-size: 1.1rem; margin-bottom: 0.4rem; text-transform: uppercase;">${ev.title}</h3>
-                    <p style="font-size: 0.88rem; color: var(--text-muted);">${ev.desc}</p>
-                `;
-                container.appendChild(card);
-            });
-        }
 
         function renderGalleryPage() {
             const container = document.getElementById('galleryContainer');
@@ -1273,13 +1238,17 @@
             await deleteFirestoreRecord('hotlines', id);
         };
 
-        // Leaders Management (Firebase)
+        // Leaders Management (ImgBB + Firebase)
         document.getElementById('addLeaderSuperForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            const fileInput = document.getElementById('superLeaderFile');
+            const photoUrl = await uploadToImgBB(fileInput);
+            if (!photoUrl) return;
+
             const payload = {
                 name: document.getElementById('superLeaderName').value,
                 role: document.getElementById('superLeaderRole').value,
-                photo: document.getElementById('superLeaderPhoto').value
+                photo: photoUrl
             };
             await addFirestoreRecord('leaders', payload);
             e.target.reset();
@@ -1311,9 +1280,11 @@
             await deleteFirestoreRecord('leaders', lId);
         };
 
-        // Counsellors Management (Firebase)
-        async function handleAddCounsellor(name, specialty, availableHours, phone, photo) {
-            await addFirestoreRecord('counsellors', { name, specialty, availableHours, phone, photo });
+        // Counsellors Management (ImgBB + Firebase)
+        async function handleAddCounsellor(name, specialty, availableHours, phone, fileInput) {
+            const photoUrl = await uploadToImgBB(fileInput);
+            if (!photoUrl) return;
+            await addFirestoreRecord('counsellors', { name, specialty, availableHours, phone, photo: photoUrl });
         }
 
         document.getElementById('addCounsellorSuperForm').addEventListener('submit', async (e) => {
@@ -1323,7 +1294,7 @@
                 document.getElementById('superCounsellorSpecialty').value,
                 document.getElementById('superCounsellorHours').value,
                 document.getElementById('superCounsellorPhone').value,
-                document.getElementById('superCounsellorPhoto').value
+                document.getElementById('superCounsellorFile')
             );
             e.target.reset();
         });
@@ -1335,7 +1306,7 @@
                 document.getElementById('newCounsellorSpecialty').value,
                 document.getElementById('newCounsellorHours').value,
                 document.getElementById('newCounsellorPhone').value,
-                document.getElementById('newCounsellorPhoto').value
+                document.getElementById('newCounsellorFile')
             );
             e.target.reset();
         });
@@ -1375,7 +1346,7 @@
             await deleteFirestoreRecord('counsellors', cId);
         };
 
-        // Events Management (Firebase)
+        // Events Management (Firebase - syncs to both Home and Events pages)
         async function handleAddEvent(title, date, desc) {
             await addFirestoreRecord('events', { title, date, desc });
         }
@@ -1431,15 +1402,17 @@
             await deleteFirestoreRecord('events', eventId);
         };
 
-        // Gallery Management (Firebase)
-        async function handleAddGallery(url, caption) {
-            await addFirestoreRecord('gallery', { url, caption });
+        // Gallery Management (ImgBB + Firebase)
+        async function handleAddGallery(fileInput, caption) {
+            const imageUrl = await uploadToImgBB(fileInput);
+            if (!imageUrl) return;
+            await addFirestoreRecord('gallery', { url: imageUrl, caption });
         }
 
         document.getElementById('addGallerySuperForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             await handleAddGallery(
-                document.getElementById('superGalleryUrl').value,
+                document.getElementById('superGalleryFile'),
                 document.getElementById('superGalleryCaption').value
             );
             e.target.reset();
@@ -1448,7 +1421,7 @@
         document.getElementById('addGalleryForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             await handleAddGallery(
-                document.getElementById('rawGalleryUrlInput').value,
+                document.getElementById('rawGalleryFileInput'),
                 document.getElementById('newPhotoCaption').value
             );
             e.target.reset();
