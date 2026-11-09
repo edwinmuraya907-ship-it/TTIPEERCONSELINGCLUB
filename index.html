@@ -4,9 +4,9 @@
     <meta name="google-site-verification" content="1ep9BWNqV7Je7pC_seu7c-nJ3TVsmb-ft8q1nSbqenU" />
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thika TTI Peer Counseling </title>
+    <title>Thika TTI Peer Counseling & Clinical Wellness Platform</title>
     <!-- Favicon / Logo in Browser Tab -->
-    <link rel="icon" type="image logo" href="logo.jpeg">
+    <link rel="icon" type="image/svg+xml" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/svgs/solid/heart-pulse.svg">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- FontAwesome Icons -->
@@ -217,8 +217,14 @@
         }
         .card:hover { transform: translateY(-5px); box-shadow: 0 20px 40px -10px rgba(79, 70, 229, 0.12); border-color: rgba(79, 70, 229, 0.3); }
         .event-poster {
-            width: 100%; height: 160px; object-fit: cover; border-radius: var(--radius-sm); margin-bottom: 0.85rem;
+            width: 100%; 
+            max-height: 280px; 
+            object-fit: contain; 
+            background: #0f172a;
+            border-radius: var(--radius-sm); 
+            margin-bottom: 0.85rem;
             border: 1px solid var(--border);
+            display: block;
         }
         .leaders-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-top: 1.5rem; }
         .leader-card {
