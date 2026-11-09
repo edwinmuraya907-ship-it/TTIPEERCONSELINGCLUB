@@ -4,9 +4,7 @@
     <meta name="google-site-verification" content="1ep9BWNqV7Je7pC_seu7c-nJ3TVsmb-ft8q1nSbqenU" />
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thika TTI Peer Counseling Club</title>
-    <logo.jpeg>
-        <link rel="icon"type="image/jpeg"href="logo.jpeg">
+    <title>Thika TTI Peer Counseling & Clinical Wellness Platform</title>
     <!-- Favicon / Logo in Browser Tab -->
     <link rel="icon" type="image/svg+xml" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/svgs/solid/heart-pulse.svg">
     <!-- Google Fonts -->
@@ -218,6 +216,10 @@
             transition: var(--transition); position: relative;
         }
         .card:hover { transform: translateY(-5px); box-shadow: 0 20px 40px -10px rgba(79, 70, 229, 0.12); border-color: rgba(79, 70, 229, 0.3); }
+        .event-poster {
+            width: 100%; height: 160px; object-fit: cover; border-radius: var(--radius-sm); margin-bottom: 0.85rem;
+            border: 1px solid var(--border);
+        }
         .leaders-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-top: 1.5rem; }
         .leader-card {
             background: var(--surface); backdrop-filter: blur(12px); border: 1px solid var(--border);
@@ -621,10 +623,11 @@
                 </div>
                 <!-- 2. LEADERS CONTROL -->
                 <div id="superSector-leaders" class="super-sector-box" style="margin-top: 1.25rem; border-top: 1px solid var(--border); padding-top: 1.25rem; display: none;">
-                    <h4 style="font-size: 1.05rem; font-weight: 800; margin-bottom: 0.85rem; text-transform: uppercase; color: var(--primary);"><i class="fa-solid fa-users"></i> Full Control Over Club Leaders (Add / Delete)</h4>
+                    <h4 style="font-size: 1.05rem; font-weight: 800; margin-bottom: 0.85rem; text-transform: uppercase; color: var(--primary);"><i class="fa-solid fa-users"></i> Full Control Over Club Leaders & Bios</h4>
                     <form id="addLeaderSuperForm" style="margin-bottom: 1.25rem;">
                         <div class="form-group"><label>Full Name</label><input type="text" id="superLeaderName" placeholder="e.g. Sarah Kim" required></div>
                         <div class="form-group"><label>Position / Role</label><input type="text" id="superLeaderRole" placeholder="e.g. Club President" required></div>
+                        <div class="form-group"><label>Bio / Personal Statement</label><textarea id="superLeaderBio" rows="2" placeholder="Brief bio or personal statement..." required></textarea></div>
                         <div class="form-group"><label>Upload Leader Portrait</label><input type="file" id="superLeaderFile" accept="image/*" required></div>
                         <button type="submit" class="btn btn-sm" style="width: 100%; justify-content: center;">Upload & Add Club Leader</button>
                     </form>
@@ -645,12 +648,13 @@
                 </div>
                 <!-- 4. EVENTS CONTROL -->
                 <div id="superSector-events" class="super-sector-box" style="margin-top: 1.25rem; border-top: 1px solid var(--border); padding-top: 1.25rem; display: none;">
-                    <h4 style="font-size: 1.05rem; font-weight: 800; margin-bottom: 0.85rem; text-transform: uppercase; color: var(--accent-warm);"><i class="fa-solid fa-calendar-plus"></i> Manage Campus Events</h4>
+                    <h4 style="font-size: 1.05rem; font-weight: 800; margin-bottom: 0.85rem; text-transform: uppercase; color: var(--accent-warm);"><i class="fa-solid fa-calendar-plus"></i> Manage Campus Events & Posters</h4>
                     <form id="addEventSuperForm" style="margin-bottom: 1.25rem;">
                         <div class="form-group"><label>Event Title</label><input type="text" id="superEventTitle" placeholder="e.g. Wellness Workshop" required></div>
                         <div class="form-group"><label>Date & Time</label><input type="text" id="superEventDate" placeholder="e.g. Nov 20 @ 2:00 PM" required></div>
+                        <div class="form-group"><label>Upload Event Poster / Image</label><input type="file" id="superEventFile" accept="image/*"></div>
                         <div class="form-group"><label>Description</label><textarea id="superEventDesc" rows="2" placeholder="Brief details..." required></textarea></div>
-                        <button type="submit" class="btn btn-warning btn-sm" style="width: 100%; justify-content: center;">Publish Event</button>
+                        <button type="submit" class="btn btn-warning btn-sm" style="width: 100%; justify-content: center;">Publish Event & Poster</button>
                     </form>
                     <div id="adminEventsList" style="display: grid; gap: 0.6rem;"></div>
                 </div>
@@ -682,8 +686,9 @@
                 <form id="addEventForm" style="margin-bottom: 1.5rem;">
                     <div class="form-group"><label>Event Title</label><input type="text" id="newEventTitle" placeholder="e.g. Mental Resilience Workshop" required></div>
                     <div class="form-group"><label>Date & Time</label><input type="text" id="newEventDate" placeholder="e.g. Nov 20 @ 2:00 PM" required></div>
+                    <div class="form-group"><label>Upload Event Poster / Image</label><input type="file" id="newEventFile" accept="image/*"></div>
                     <div class="form-group"><label>Description</label><textarea id="newEventDesc" rows="2" placeholder="Brief details..." required></textarea></div>
-                    <button type="submit" class="btn" style="width: 100%; justify-content: center;">Publish Event</button>
+                    <button type="submit" class="btn" style="width: 100%; justify-content: center;">Publish Event & Poster</button>
                 </form>
                 <div id="adminEventsListSub" style="display: grid; gap: 0.75rem; margin-bottom: 1.5rem;"></div>
                 <!-- Individual Password Change -->
@@ -990,7 +995,9 @@
             globalDB.events.slice(0, 2).forEach(ev => {
                 const card = document.createElement('div');
                 card.className = 'card';
+                let posterHTML = ev.poster ? `<img src="${ev.poster}" alt="Event Poster" class="event-poster">` : '';
                 card.innerHTML = `
+                    ${posterHTML}
                     <span class="badge" style="background: var(--primary-light); color: var(--primary); padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.72rem; font-weight: 700; display: inline-block; margin-bottom: 0.6rem;">${ev.date}</span>
                     <h3 style="font-weight: 800; font-size: 1.1rem; margin-bottom: 0.4rem; text-transform: uppercase;">${ev.title}</h3>
                     <p style="font-size: 0.88rem; color: var(--text-muted);">${ev.desc}</p>
@@ -1010,7 +1017,9 @@
             globalDB.events.forEach(ev => {
                 const card = document.createElement('div');
                 card.className = 'card';
+                let posterHTML = ev.poster ? `<img src="${ev.poster}" alt="Event Poster" class="event-poster">` : '';
                 card.innerHTML = `
+                    ${posterHTML}
                     <span style="background: var(--primary-light); color: var(--primary); padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.72rem; font-weight: 700; display: inline-block; margin-bottom: 0.6rem;">${ev.date}</span>
                     <h3 style="font-weight: 800; font-size: 1.1rem; margin-bottom: 0.4rem; text-transform: uppercase;">${ev.title}</h3>
                     <p style="font-size: 0.88rem; color: var(--text-muted);">${ev.desc}</p>
@@ -1026,11 +1035,12 @@
             globalDB.leaders.forEach(l => {
                 const card = document.createElement('div');
                 card.className = 'leader-card';
+                const bioText = l.bio ? `<p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.5rem; font-style: italic;">"${l.bio}"</p>` : '';
                 card.innerHTML = `
                     <img src="${l.photo}" alt="${l.name}" class="leader-avatar">
                     <h3 style="font-weight: 800; font-size: 1.1rem; text-transform: uppercase;">${l.name}</h3>
                     <p style="color: var(--primary); font-size: 0.82rem; font-weight: 700; margin-bottom: 0.25rem;">${l.role}</p>
-                    <p style="font-size: 0.78rem; color: var(--text-muted);">Thika TTI Chapter</p>
+                    ${bioText}
                 `;
                 container.appendChild(card);
             });
@@ -1250,6 +1260,7 @@
             const payload = {
                 name: document.getElementById('superLeaderName').value,
                 role: document.getElementById('superLeaderRole').value,
+                bio: document.getElementById('superLeaderBio').value,
                 photo: photoUrl
             };
             await addFirestoreRecord('leaders', payload);
@@ -1348,9 +1359,13 @@
             await deleteFirestoreRecord('counsellors', cId);
         };
 
-        // Events Management (Firebase - syncs to both Home and Events pages)
-        async function handleAddEvent(title, date, desc) {
-            await addFirestoreRecord('events', { title, date, desc });
+        // Events Management (ImgBB Poster Upload + Firebase)
+        async function handleAddEvent(title, date, desc, fileInput) {
+            let posterUrl = '';
+            if (fileInput && fileInput.files && fileInput.files[0]) {
+                posterUrl = await uploadToImgBB(fileInput);
+            }
+            await addFirestoreRecord('events', { title, date, desc, poster: posterUrl });
         }
 
         document.getElementById('addEventSuperForm').addEventListener('submit', async (e) => {
@@ -1358,7 +1373,8 @@
             await handleAddEvent(
                 document.getElementById('superEventTitle').value,
                 document.getElementById('superEventDate').value,
-                document.getElementById('superEventDesc').value
+                document.getElementById('superEventDesc').value,
+                document.getElementById('superEventFile')
             );
             e.target.reset();
         });
@@ -1368,7 +1384,8 @@
             await handleAddEvent(
                 document.getElementById('newEventTitle').value,
                 document.getElementById('newEventDate').value,
-                document.getElementById('newEventDesc').value
+                document.getElementById('newEventDesc').value,
+                document.getElementById('newEventFile')
             );
             e.target.reset();
         });
@@ -1388,10 +1405,14 @@
             globalDB.events.forEach(ev => {
                 const item = document.createElement('div');
                 item.style.cssText = 'display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 0.65rem 0.95rem; border-radius: 8px; border: 1px solid var(--border); gap: 1rem; flex-wrap: wrap;';
+                let thumb = ev.poster ? `<img src="${ev.poster}" style="width: 35px; height: 35px; object-fit: cover; border-radius: 4px;">` : '';
                 item.innerHTML = `
-                    <div>
-                        <strong style="font-size: 0.9rem; color: var(--text-main); text-transform: uppercase;">${ev.title}</strong>
-                        <div style="font-size: 0.78rem; color: var(--text-muted);">${ev.date}</div>
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        ${thumb}
+                        <div>
+                            <strong style="font-size: 0.9rem; color: var(--text-main); text-transform: uppercase;">${ev.title}</strong>
+                            <div style="font-size: 0.78rem; color: var(--text-muted);">${ev.date}</div>
+                        </div>
                     </div>
                     <button class="btn btn-danger btn-sm" onclick="deleteEvent('${ev.id}')"><i class="fa-solid fa-trash"></i> Delete</button>
                 `;
